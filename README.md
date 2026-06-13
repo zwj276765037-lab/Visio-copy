@@ -13,11 +13,27 @@ It is designed for paper-style architecture figures: boxes, arrows, buses, table
 - Provides Python tools for color-component extraction and crop comparison.
 - Includes special guidance for separated stacked-grid and key-matrix diagrams.
 
+## Effect Showcase: Original vs Copy
+
+The following examples show reference diagrams and Visio-copy redraw results. The copy-side images are screenshots of editable Visio drawings, not pasted raster-only replacements.
+
+**Version note:** this is the `1.0` release. Visio-copy works better for regular architecture/block diagrams than for very dense stacked tensor or repeated-cell diagrams. The current workflow still needs manual crop-level checking for dense stacked graphics, and its automatic drawing guidance is not yet strong enough for perfect reproduction of those cases.
+
+中文说明：这是 `1.0` 版本，`visio-copy` 对堆叠密集图形的绘制效果还不够好，后续版本会继续改进这类图中小方块、遮挡层级、重复单元计数和文字排版的复刻质量。
+
+| Case | Original | Copy |
+| --- | --- | --- |
+| Hardware architecture diagram | <img src="assets/showcase/hardware-original.png" width="420" alt="Hardware original"> | <img src="assets/showcase/hardware-copy.png" width="420" alt="Hardware Visio copy"> |
+| PADE architecture figure | <img src="assets/showcase/pade-original.png" width="420" alt="PADE original"> | <img src="assets/showcase/pade-copy.png" width="420" alt="PADE Visio copy"> |
+| Bit-serial stage-fusion figure | <img src="assets/showcase/bsf-original.png" width="420" alt="BSF original"> | <img src="assets/showcase/bsf-copy.png" width="420" alt="BSF Visio copy"> |
+
 ## Repository Layout
 
 ```text
 .
 |-- SKILL.md
+|-- assets/
+|   `-- showcase/
 |-- agents/
 |-- references/
 |   |-- redraw-checklist.md

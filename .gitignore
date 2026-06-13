@@ -18,6 +18,10 @@ __pycache__/
 *.tiff
 *.pdf
 
+!assets/
+!assets/showcase/
+!assets/showcase/*.png
+
 # Keep source images/examples only when intentionally forced with git add -f.
 visio-copy-crops/
 crops/
