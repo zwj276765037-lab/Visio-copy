@@ -1,36 +1,40 @@
+<p align="right">
+  <strong>简体中文</strong> | <a href="README.en.md">English</a>
+</p>
+
 # Visio Copy
 
-`visio-copy` is a Codex skill for recreating raster technical diagrams in Microsoft Visio as editable vector shapes.
+`visio-copy` 是一个 Codex skill，用于将论文、PPT 或截图中的技术图复刻到 Microsoft Visio 中，并尽量生成可编辑的矢量形状，而不是简单粘贴一张图片。
 
-It is designed for paper-style architecture figures: boxes, arrows, buses, tables, formulas, grids, stacked tensors, and dense labels. The workflow uses a locked reference image as a temporary underlay, redraws the diagram with real Visio shapes through COM automation, exports previews, and validates dense components with side-by-side crops.
+它主要面向体系结构图、硬件框图、数据流图和论文中的模块示意图，支持通过 Visio COM 自动化创建矩形、箭头、总线、表格、网格、公式标签和堆叠结构，并通过预览图与局部 crop 对比进行迭代修复。
 
-## What This Skill Does
+## 功能特点
 
-- Draws editable Visio shapes instead of pasting screenshots.
-- Uses source-image pixel coordinates for repeatable layout.
-- Keeps a tracing underlay during iteration, then removes it for final delivery.
-- Provides PowerShell helpers for Visio COM drawing.
-- Provides Python tools for color-component extraction and crop comparison.
-- Includes special guidance for separated stacked-grid and key-matrix diagrams.
+- 生成可编辑的 Visio shape，而不是截图式复制。
+- 使用源图像像素坐标作为统一坐标系，便于精确复刻布局。
+- 迭代时使用锁定的底层参考图，最终交付时移除底图。
+- 提供 PowerShell Visio COM 绘图脚手架。
+- 提供 Python 工具用于颜色区域提取和局部 crop 对比。
+- 包含针对堆叠网格、Key Matrix、小方块阵列等复杂结构的复刻规则。
 
-## Effect Showcase: Original vs Copy
+## 部分效果展示：原图 vs Copy
 
-The following examples show reference diagrams and Visio-copy redraw results. The copy-side images are screenshots of editable Visio drawings, not pasted raster-only replacements.
+下面展示的是参考原图与 `visio-copy` 复刻后的 Visio 结果。Copy 一侧是可编辑 Visio 图形的截图，不是直接贴图替代。
 
-**Version note:** this is the `1.0` release. Visio-copy works better for regular architecture/block diagrams than for very dense stacked tensor or repeated-cell diagrams. The current workflow still needs manual crop-level checking for dense stacked graphics, and its automatic drawing guidance is not yet strong enough for perfect reproduction of those cases.
+**版本说明：** 这是 `1.0` 版本。当前 `visio-copy` 对常规模块框图和架构图效果较好，但对堆叠密集图形的绘制效果还不够好。尤其是大量小方块、遮挡层级、重复单元计数、斜线纹理和密集文字排版，仍然需要人工 crop 级检查和多轮修正。
 
-中文说明：这是 `1.0` 版本，`visio-copy` 对堆叠密集图形的绘制效果还不够好，后续版本会继续改进这类图中小方块、遮挡层级、重复单元计数和文字排版的复刻质量。
-
-| Case | Original | Copy |
+| 案例 | 原图 | Copy |
 | --- | --- | --- |
-| Hardware architecture diagram | <img src="assets/showcase/hardware-original.png" width="420" alt="Hardware original"> | <img src="assets/showcase/hardware-copy.png" width="420" alt="Hardware Visio copy"> |
-| PADE architecture figure | <img src="assets/showcase/pade-original.png" width="420" alt="PADE original"> | <img src="assets/showcase/pade-copy.png" width="420" alt="PADE Visio copy"> |
-| Bit-serial stage-fusion figure | <img src="assets/showcase/bsf-original.png" width="420" alt="BSF original"> | <img src="assets/showcase/bsf-copy.png" width="420" alt="BSF Visio copy"> |
+| 硬件架构图 | <img src="assets/showcase/hardware-original.png" width="420" alt="Hardware original"> | <img src="assets/showcase/hardware-copy.png" width="420" alt="Hardware Visio copy"> |
+| PADE 架构图 | <img src="assets/showcase/pade-original.png" width="420" alt="PADE original"> | <img src="assets/showcase/pade-copy.png" width="420" alt="PADE Visio copy"> |
+| Bit-serial stage-fusion 图 | <img src="assets/showcase/bsf-original.png" width="420" alt="BSF original"> | <img src="assets/showcase/bsf-copy.png" width="420" alt="BSF Visio copy"> |
 
-## Repository Layout
+## 仓库结构
 
 ```text
 .
+|-- README.md
+|-- README.en.md
 |-- SKILL.md
 |-- assets/
 |   `-- showcase/
@@ -47,48 +51,48 @@ The following examples show reference diagrams and Visio-copy redraw results. Th
 `-- LICENSE
 ```
 
-## Requirements
+## 环境要求
 
 - Windows
-- Microsoft Visio desktop application
+- Microsoft Visio 桌面版
 - PowerShell
 - Python 3.10+
-- Python packages in `requirements.txt`
+- `requirements.txt` 中的 Python 包
 
-Install Python dependencies:
+安装 Python 依赖：
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-## Install As A Codex Skill
+## 安装为 Codex Skill
 
-Clone this repository into your Codex skills directory, or copy it there:
+将本仓库 clone 到 Codex skills 目录：
 
 ```powershell
 git clone https://github.com/zwj276765037-lab/Visio-copy.git "$env:USERPROFILE\.codex\skills\visio-copy"
 ```
 
-Then invoke it in Codex with:
+然后在 Codex 中调用：
 
 ```text
 $visio-copy
 ```
 
-## Basic Workflow
+## 基本流程
 
-1. Put the target `.vsdx` file and reference image in known paths.
-2. Use `scripts/visio_manual_redraw_scaffold.ps1` as the base for a project-specific redraw script.
-3. Set the source image width and height.
-4. Draw in pixel coordinates with helper functions such as `Add-RectPx`, `Add-LinePx`, `Add-TextPx`, and `Add-PolygonPx`.
-5. Export a preview PNG from Visio.
-6. Compare the preview with the reference by component crops.
-7. Repair geometry, text, arrows, line weights, and layer order.
-8. After acceptance, run final cleanup to remove tracing underlays and keep only editable vector shapes.
+1. 准备目标 `.vsdx` 文件和参考图片路径。
+2. 基于 `scripts/visio_manual_redraw_scaffold.ps1` 创建项目专用绘图脚本。
+3. 设置源图像宽度、高度和像素到 Visio 的比例映射。
+4. 使用 `Add-RectPx`、`Add-LinePx`、`Add-TextPx`、`Add-PolygonPx` 等 helper 按像素坐标绘制。
+5. 从 Visio 导出预览 PNG。
+6. 对原图和预览图生成相同 bbox 的局部 crop。
+7. 批量修复几何位置、文字、箭头、线宽、图层顺序和漏画元素。
+8. 用户确认后清理底层参考图，只保留最终可编辑矢量层。
 
-## Crop Comparison
+## 局部 Crop 对比
 
-Generate side-by-side validation crops:
+生成局部对比图：
 
 ```powershell
 python scripts/crop_compare.py reference.png preview.png --out crops `
@@ -96,27 +100,27 @@ python scripts/crop_compare.py reference.png preview.png --out crops `
   --component right_table:560,40,220,120
 ```
 
-Each component is defined as:
+组件格式：
 
 ```text
 name:x,y,w,h
 ```
 
-Coordinates are in reference-image pixels.
+坐标均为参考图像中的像素坐标。
 
-## Color Component Extraction
+## 颜色区域提取
 
-Extract rough bounding boxes for common paper-figure color regions:
+提取常见论文图颜色区域的粗略 bbox：
 
 ```powershell
 python scripts/extract_color_components.py reference.png --min-area 100 --top 20
 ```
 
-Use this only to seed coordinates. Final redraw quality still depends on manual component auditing.
+该工具只用于辅助定位。最终复刻质量仍然依赖人工组件审查和 Visio shape 级绘制。
 
-## Visio Final Cleanup
+## 最终清理
 
-After the user accepts the redraw:
+用户确认结果后，运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/finalize_visio_copy_page.ps1 `
@@ -125,13 +129,13 @@ powershell -ExecutionPolicy Bypass -File scripts/finalize_visio_copy_page.ps1 `
   -FinalLayerName "ManualRedraw_HiRes"
 ```
 
-This backs up the file, deletes shapes outside the final layer, removes non-final layers, and saves the `.vsdx`.
+该脚本会备份文件，删除非最终层 shape，移除临摹底图和临时图层，并保存 `.vsdx`。
 
-## Notes For Dense Stacked Diagrams
+## 堆叠密集图形说明
 
-Do not draw separated tensor/key-matrix blocks as one cuboid. Count the visible cells from crops, draw rear hints first, then draw opaque front cells so hidden rear lines do not pass through foreground gaps. Validate every dense block at 2x or 3x crop scale.
+不要把分离的小方块阵列画成一个整体立方体。应先从 crop 中统计可见单元数量，先画后层提示线，再画带不透明填充的前景单元，避免隐藏线穿过小方块缝隙。对于密集堆叠图，必须使用 2x 或 3x 局部 crop 检查。
 
-See `references/stacked-grid-mode.md` for detailed rules.
+更多规则见 `references/stacked-grid-mode.md`。
 
 ## License
 
