@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.tmp
+*.bak
+*.log
+
+# Visio generated files and local outputs
+*.vsdx
+*.vsd
+*.vsdm
+*.vssx
+*.vstx
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.pdf
+
+# Keep source images/examples only when intentionally forced with git add -f.
+visio-copy-crops/
+crops/
+previews/
+outputs/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
