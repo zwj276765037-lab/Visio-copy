@@ -16,7 +16,10 @@ import argparse
 from pathlib import Path
 from typing import Iterable
 
-from PIL import Image, ImageDraw
+import json
+
+import numpy as np
+from PIL import Image, ImageChops, ImageDraw, ImageStat
 
 
 def parse_component(value: str) -> tuple[str, tuple[int, int, int, int]]:
@@ -61,6 +64,17 @@ def save_pair(
 ) -> None:
     ref_crop = ref.crop(ref_box)
     preview_crop = crop_scaled(preview, ref_box, ref.size)
+    preview_for_metrics = preview_crop.resize(ref_crop.size, Image.Resampling.BICUBIC)
+    diff = ImageChops.difference(ref_crop.convert("RGB"), preview_for_metrics.convert("RGB"))
+    stat = ImageStat.Stat(diff)
+    arr = np.asarray(diff.convert("L"))
+    metrics = {
+        "name": name,
+        "xywh": [ref_box[0], ref_box[1], ref_box[2] - ref_box[0], ref_box[3] - ref_box[1]],
+        "mean_abs_rgb_delta": [round(v, 3) for v in stat.mean],
+        "rms_rgb_delta": [round(v, 3) for v in stat.rms],
+        "changed_pixel_fraction": round(float((arr > 24).sum()) / float(arr.size), 6) if arr.size else 0.0,
+    }
 
     if zoom != 1:
         ref_crop = ref_crop.resize((ref_crop.width * zoom, ref_crop.height * zoom), Image.Resampling.NEAREST)
@@ -70,22 +84,32 @@ def save_pair(
     ref_path = out_dir / f"{name}.reference.png"
     preview_path = out_dir / f"{name}.preview.png"
     side_path = out_dir / f"{name}.side-by-side.png"
+    diff_path = out_dir / f"{name}.diff.png"
+    metrics_path = out_dir / f"{name}.metrics.json"
     ref_crop.save(ref_path)
     preview_crop.save(preview_path)
+    if zoom != 1:
+        diff_out = diff.resize((diff.width * zoom, diff.height * zoom), Image.Resampling.NEAREST)
+    else:
+        diff_out = diff
+    diff_out.save(diff_path)
+    metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     pad = 12
     label_h = 18
-    width = ref_crop.width + preview_crop.width + pad
-    height = max(ref_crop.height, preview_crop.height) + label_h
+    width = ref_crop.width + preview_crop.width + diff_out.width + pad * 2
+    height = max(ref_crop.height, preview_crop.height, diff_out.height) + label_h
     side = Image.new("RGB", (width, height), "white")
     side.paste(ref_crop.convert("RGB"), (0, label_h))
     side.paste(preview_crop.convert("RGB"), (ref_crop.width + pad, label_h))
+    side.paste(diff_out.convert("RGB"), (ref_crop.width + preview_crop.width + pad * 2, label_h))
     draw = ImageDraw.Draw(side)
     draw.text((0, 2), "reference", fill=(0, 0, 0))
     draw.text((ref_crop.width + pad, 2), "preview", fill=(0, 0, 0))
+    draw.text((ref_crop.width + preview_crop.width + pad * 2, 2), "diff", fill=(0, 0, 0))
     side.save(side_path)
 
-    print(f"{name}: {ref_path} | {preview_path} | {side_path}")
+    print(f"{name}: {ref_path} | {preview_path} | {side_path} | {diff_path} | {metrics_path}")
 
 
 def main(argv: Iterable[str] | None = None) -> int:

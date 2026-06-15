@@ -8,26 +8,43 @@
 
 It is designed for architecture figures, hardware block diagrams, dataflow diagrams, and paper-style module diagrams. The workflow uses Visio COM automation to draw rectangles, arrows, buses, tables, grids, formula labels, and stacked structures, then validates the result through exported previews and component-level crop comparisons.
 
+Usage note: complex linework, dense arrows, stacked structures, 3D/2.5D diagrams, and repeated small modules usually need several repair passes for better results. When using `visio-copy`, try a few rounds patiently; if you can point out specific issues such as misalignment, occlusion, arrow endpoints, layer order, text wrapping, or inaccurate colors, the redraw can usually converge faster to a better editable Visio result.
+
 ## What This Skill Does
 
 - Draws editable Visio shapes instead of raster-only copies.
+- Keeps the drawing operations in Visio; the final `.vsdx` should consist of editable shapes, lines, text, and layers.
 - Uses source-image pixel coordinates as the shared coordinate system.
-- Keeps a locked reference underlay during iteration, then removes it for final delivery.
+- Keeps the drawing process in native Visio shapes, connectors, lines, polygons, text, groups, and layers. The reference image is not part of the final Visio page content.
 - Provides a PowerShell scaffold for Visio COM drawing.
 - Provides Python tools for color-region extraction and side-by-side crop comparison.
 - Includes specialized guidance for stacked grids, key matrices, repeated small blocks, and dense tensor-like diagrams.
 
-## Effect Showcase: Original vs Copy
+## 2.0 Effect Showcase: Original vs Copy
 
-The following examples show reference diagrams and `visio-copy` redraw results. The copy-side images are screenshots of editable Visio drawings, not pasted raster-only replacements.
+The following examples show reference diagrams and `visio-copy` redraw results. The copy-side images are screenshots of editable Visio drawings, not pasted images or non-editable raster tracings.
 
-**Version note:** this is the `1.0` release. Visio-copy works better for regular architecture and block diagrams than for very dense stacked tensor or repeated-cell diagrams. Dense stacks still require manual crop-level inspection and multiple repair passes, especially for small-cell separation, occlusion order, repeated-unit counts, hatch directions, and compact text layout.
+**Version note:** this is the `2.0` release. Compared with `1.0`, this version improves editable redraw primitives, local layout stability, color/style analysis, and Visio-export audit workflows for complex hardware architecture diagrams. `visio-copy` is still not a one-click pixel-perfect converter; high-quality redraws still require component-level inspection and targeted manual repair, but 2.0 turns many repeated failure modes into reusable drawing rules and primitives.
 
 | Case | Original | Copy |
 | --- | --- | --- |
-| Hardware architecture diagram | <img src="assets/showcase/hardware-original.png" width="420" alt="Hardware original"> | <img src="assets/showcase/hardware-copy.png" width="420" alt="Hardware Visio copy"> |
-| PADE architecture figure | <img src="assets/showcase/pade-original.png" width="420" alt="PADE original"> | <img src="assets/showcase/pade-copy.png" width="420" alt="PADE Visio copy"> |
-| Bit-serial stage-fusion figure | <img src="assets/showcase/bsf-original.png" width="420" alt="BSF original"> | <img src="assets/showcase/bsf-copy.png" width="420" alt="BSF Visio copy"> |
+| AQPIM data layout | <img src="assets/showcase/aqpim-data-layout-original.png" width="420" alt="AQPIM data layout original"> | <img src="assets/showcase/aqpim-data-layout-copy.png" width="420" alt="AQPIM data layout Visio copy"> |
+| PIM DIMMs routing | <img src="assets/showcase/pim-dimms-original.png" width="420" alt="PIM DIMMs routing original"> | <img src="assets/showcase/pim-dimms-copy.png" width="420" alt="PIM DIMMs routing Visio copy"> |
+| Protocol network example | <img src="assets/showcase/protocol-network-original.png" width="420" alt="Protocol network original"> | <img src="assets/showcase/protocol-network-copy.png" width="420" alt="Protocol network Visio copy"> |
+| Decoder flow | <img src="assets/showcase/decoder-flow-original.png" width="420" alt="Decoder flow original"> | <img src="assets/showcase/decoder-flow-copy.png" width="420" alt="Decoder flow Visio copy"> |
+| DFBM credit management | <img src="assets/showcase/dfbm-credit-original.png" width="420" alt="DFBM credit original"> | <img src="assets/showcase/dfbm-credit-copy.png" width="420" alt="DFBM credit Visio copy"> |
+
+## What Improved Since 1.0
+
+- **Stronger editable Visio primitives:** added and expanded `visio_copy_manual_primitives.ps1` for transparent text, fitted text, rounded modules, tables, message-lane tables, hatched regions, polygons, orthogonal routes, block arrows, isometric router grids, and logic/electrical symbols.
+- **More stable text layout:** added rules for text lanes, font caps, transparent text drawn last, rotated-label bboxes, and segmented colored text so short labels such as `PE`, `HBM`, `TSV`, `SRAM`, `NoC`, `P1`, and `D1` do not wrap after PNG export.
+- **Less white-mask damage:** normal text should be transparent by default. Broad white masks that hide gray cells, bit bars, arrows, borders, or grids are treated as redraw failures.
+- **Better local anchoring:** child modules, bit bars, local arrows, ports, table cells, and labels should be positioned in parent-local coordinates instead of drifting in page-global coordinates.
+- **Broader hardware-diagram coverage:** added redraw guidance for chiplet/NoC figures, memory arrays, wafer/die/core/package multi-view diagrams, scheduling token chains, PE grids, dense tables, stacked matrices, DIMM/board/package diagrams, and DRAM/flash/storage-controller figures.
+- **Improved color and structure analysis:** added `analyze_reference_style.py` to sample global and crop-local colors, edge directions, and structure cues before drawing.
+- **Safer Visio preview export:** added `export_visio_png_safe.ps1` to avoid hangs from direct Visio `Page.Export()` calls, with page-background and off-page-shape cleanup guidance.
+- **More systematic crop auditing:** strengthened component-level crop comparison for text, arrow endpoints, layering, repeated-unit counts, cell pitch, line weights, color fidelity, and 2.5D/3D stack ordering.
+- **Clearer artifact boundary:** `redraw.vsdx` is reserved for manually reviewed final editable redraws. Automatic scaffolds or first-pass outputs should not overwrite it.
 
 ## Repository Layout
 
@@ -44,8 +61,14 @@ The following examples show reference diagrams and `visio-copy` redraw results. 
 |   `-- stacked-grid-mode.md
 |-- scripts/
 |   |-- crop_compare.py
+|   |-- export_visio_png_safe.ps1
 |   |-- extract_color_components.py
 |   |-- finalize_visio_copy_page.ps1
+|   |-- import_visual_svg_to_visio.ps1
+|   |-- raster_to_run_svg.py
+|   |-- run_manual_crop_audit.ps1
+|   |-- test_visio_copy_primitives_smoke.ps1
+|   |-- visio_copy_manual_primitives.ps1
 |   `-- visio_manual_redraw_scaffold.ps1
 |-- requirements.txt
 `-- LICENSE
@@ -88,7 +111,7 @@ $visio-copy
 5. Export a preview PNG from Visio.
 6. Generate matching component crops from the reference and preview images.
 7. Repair geometry, text, arrows, line weights, layer order, and missing elements in batches.
-8. After acceptance, clean the page by removing the tracing underlay and keeping only the final editable vector layer.
+8. After acceptance, clean temporary layers and keep only the final editable vector layer.
 
 ## Crop Comparison
 
@@ -107,6 +130,16 @@ name:x,y,w,h
 ```
 
 Coordinates are in reference-image pixels.
+
+If a redraw output directory already contains `manifest.json` with an `audit_components` array, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_manual_crop_audit.ps1 `
+  -OutputDir "path\to\redraw-output" `
+  -Zoom 3
+```
+
+The wrapper reads `source`, `preview`, and `audit_components`, then calls `crop_compare.py` to generate side-by-side crops, diffs, and metrics files.
 
 ## Color Component Extraction
 
@@ -130,6 +163,15 @@ powershell -ExecutionPolicy Bypass -File scripts/finalize_visio_copy_page.ps1 `
 ```
 
 This backs up the file, deletes shapes outside the final layer, removes temporary tracing layers, and saves the `.vsdx`.
+
+## Disabled Trace Guardrails
+
+The repository keeps two disabled guardrail scripts:
+
+- `scripts/raster_to_run_svg.py`
+- `scripts/import_visual_svg_to_visio.ps1`
+
+They are not part of the drawing workflow and intentionally fail when executed. They exist only to make the boundary explicit: raster-to-SVG conversion, SVG/PDF trace import, and auto-vectorized pixel-copy routes are forbidden as normal `visio-copy` delivery methods.
 
 ## Notes For Dense Stacked Diagrams
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "Visio Copy"
-  short_description: "Recreate raster and stacked-grid diagrams as editable Visio vector drawings."
-  default_prompt: "Use visio_copy to trace a reference image into editable Visio shapes with correct layers, pixel coordinates, stacked-grid cell matrices, arrows, text sizing, and preview validation."
+  short_description: "Recreate raster diagrams as editable Visio vectors with sampled colors and 2.5D/3D stacks."
+  default_prompt: "Use visio_copy to trace a reference image into editable Visio shapes with sampled palettes, correct layers, pixel coordinates, shadows, gradients, 2.5D/3D stacked primitives, arrows, text sizing, crop diffs, and preview validation."
